@@ -1,4 +1,4 @@
-import pygame
+import pygame, os
 
 """
 MADE BY DEXTRON12
@@ -16,8 +16,11 @@ class init(object):
         self.mouse, self.click = 0,0
         self.keyLog = False
         self.loggedKeys = []
+        self.returnPressed = False
+        self.timer = False
 
     def poll_events(self): # MUST CALL EACH FRAME
+        pygame.time.set_timer(pygame.USEREVENT+1, 1500)
         self.mouse, self.click = pygame.mouse.get_pos(), pygame.mouse.get_pressed()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -29,6 +32,13 @@ class init(object):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if self.keyLog:
                     self.loggedKeys.append(event.unicode)
+                if event.button == pygame.RETURN:
+                    self.returnPressed = True
+            if event.type == pygame.USEREVENT+1:
+                self.timer = True:
+            elif self.timer = True and event.type != pygame.USEREVENT+1:
+                self.timer = False
+        
 
 
 
@@ -94,11 +104,12 @@ class Input(object):
         if mode == "enable":
             if init.loggedKeys != []: # REFRESH LOGGED KEYS
                 init.loggedKeys = []
+            init.keyLog = True
         if mode == "disable":
             init.keyLog = False
             init.loggedKeys = []
 
-def Forms(object):
+class Forms(object):
     self.formInputs = {} # LAYOUT = {REF: [INPUT], REF: [INPUT]}
     self.formSettings = {} # LAYOUT = {REF: [ACTIVE, X, Y, W, H, BG, TC, BC, BORDERSIZE, BORDERINSIZE, ENCRYPTION, ECRYPTCHAR]}
     self.encryptedForms = {} # LAYOUT = {REF: [ENCRYPTED_OUTPUT]}
@@ -106,8 +117,65 @@ def Forms(object):
     def create_generic(self, x, y, w, h, bg, tc, bc, borderSize, borderInsize, formName, encryption=False, encryptChar='*'):
         self.formSettings[formName] = [False, x, y, w ,h bg, tc, bc, borderSize, borderInsize, encryption]
 
+    def encrypt(self, formName, encryptChar, method):
+        if method == "add":
+            for char in self.formInputs[formName]:
+                self.encryptedForms[formName].append(encryptChar)
+        else:
+            self.encryptedForms[formName].remove(encryptChar)
+    
+
     def draw_form(self, formName):
         x, y, w ,h = self.formSettings[formName][1], self.formSettings[formName][2], self.formSettings[formName][3], self.formSettings[formName][4]
+        bg, tc, bc = self.formSettings[formName][5], self.formSettings[formName][6], self.formSettings[formName][7]
+        borderSize, borderInsize = self.formSettings[formName][8], self.formSettings[formName][9]
+        encryption, encryptChar = self.formSettings[formName][10], self.formSettings[formName][11]
+
+        active = self.formSettings[formName][0]
+
+        pygame.draw.rect(init.window, bc, (x+borderInsize,y+borderInsize,w-borderInsize,h-borderInsize), borderSize) # DRAWS BORDER
+        pygame.draw.rect(init.window, bg, (x,y,w,h)) # DRAWS MAIN BODY OF FORM
+
+        # DRAW TEXT TO THE CENTER OF THE FORM
+        if encryption: # DRAW ENCRYPTED CHARS INSTEAD
+            Text.generic(x//2,y-10, tc, "Arial", h-15, "".join(self.encryptedForms[formName]))
+        else:
+            Text.generic(x//2,y-10, tc, "Arial", h-15, "".join(self.formInputs[formName]))
+
+        # DRAW FLASHING CURSOR
+        if active == True:
+            if init.timer == True:
+                pygame.draw.line(init.window, (0,0,0), (x//2,y+2,), ((x//2)+w, (y+h)+2), 6)
+
+                # HANDLE USER INPUT
+                Input.Log("enable")
+                # GRAB HANDLED KEYS FROM LIST
+                self.formInputs[formName].append(init.loggedKeys[-1]) # !!!WARNING!!! THIS METHOD CAN CAUS ELAG AS IT ADDS LAST CHAR PER LOOP AND MAY SKIP TYPED CHARS | sUGGETS BETTER METHOD
+        else:
+            # CHECK IF KEY LOG IS ACTIVATED | IF SO DISABLE!!
+            if init.keyLog == True:
+                Input.Log("disable")
+
+class libViewer(object):
+
+    def __init__(self):
+        self.width = windowWidth-40
+        self.height = windowHeight-20
+        self.files = []
+        self.currentDir = os.getcwd()
+        self.frame = pygame.Surface(self.width, self.height)
+        self.frame.set_alpha(80)
+
+    def read_dir(self, dir):
+        self.files = os.listdir(dir)
+
+
+    def draw(self, x, y, bg, fg, scrollColour, fileSize=64):
+        self.frame.fill(bg)
+
+        #SCROLL BAR
+        pygame.draw.rect(self.frame, fg, (self.width-10,self.height+5, 25, self.height-10)) # SCROLl BACKGROUND
+
 
 
 
